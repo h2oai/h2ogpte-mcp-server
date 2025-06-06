@@ -1,4 +1,4 @@
-__version__ = "1.6.30"
+__version__ = "0.0.1"
 
 from .server import start_server
 
