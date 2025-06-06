@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68", "setuptools-scm>=8.0", "Cython"]
+build-backend = "cy_build"
+backend-path = ["."]
+
+[project]
+name = "h2ogpte-mcp"
+description = "MCP API server for h2oGPTe"
+readme = "README.md"
+requires-python = ">=3.10"
+keywords = []
+authors = [
+    { name = "H2O.ai, Inc.", email = "support@h2o.ai" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: Implementation :: PyPy",
+]
+dynamic = ["version", "dependencies"]
+
+[project.scripts]
+h2ogpte-mcp = "h2ogpte_mcp:main"
+
+[project.urls]
+Source = "https://github.com/h2oai/h2ogpte"
+Issues = "https://github.com/h2oai/h2ogpte/issues"
+Documentation = "https://github.com/h2oai/h2ogpte/wiki"
+
+[tool.setuptools.dynamic]
+version = { attr = "h2ogpte_mcp.__version__" }
+dependencies = { file = ["requirements.txt"] }
+
+[tool.pytest.ini_options]
+pythonpath = [
+    "src"
+]
