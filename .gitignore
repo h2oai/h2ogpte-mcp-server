@@ -1,6 +1,6 @@
-build/*
-dist/*
-venv/*
+build/
+dist/
+venv/
 *.egg-info
 *.pyc
 *.pyo

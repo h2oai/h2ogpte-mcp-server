@@ -10,6 +10,14 @@ setup:
 build:
 	./venv/bin/python -m build
 
+.PHONY: install
+install:
+	pip install dist/h2ogpte_mcp_server-*.whl
+
+.PHONY: uninstall
+uninstall:
+	pip uninstall h2ogpte_mcp_server
+
 .PHONY: upload
 upload:
 	./venv/bin/python -m twine upload dist/*
