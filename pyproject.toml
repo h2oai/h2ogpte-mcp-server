@@ -1,14 +1,13 @@
 [build-system]
-requires = ["setuptools>=68", "setuptools-scm>=8.0", "Cython"]
-build-backend = "cy_build"
-backend-path = ["."]
+requires = ["setuptools>=68", "setuptools-scm>=8.0"]
+build-backend = "setuptools.build_meta"
 
 [project]
-name = "h2ogpte-mcp"
+name = "h2ogpte-mcp-server"
 description = "MCP API server for h2oGPTe"
 readme = "README.md"
 requires-python = ">=3.10"
-keywords = []
+keywords = ["h2ogpte", "mcp", "mcp-server", "llm"]
 authors = [
     { name = "H2O.ai, Inc.", email = "support@h2o.ai" },
 ]
@@ -17,18 +16,18 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: Implementation :: CPython",
+    "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dynamic = ["version", "dependencies"]
 
 [project.scripts]
-h2ogpte-mcp = "h2ogpte_mcp_server:main"
+h2ogpte-mcp-server = "h2ogpte_mcp_server:main"
 
 [project.urls]
-Source = "https://github.com/h2oai/h2ogpte"
-Issues = "https://github.com/h2oai/h2ogpte/issues"
-Documentation = "https://github.com/h2oai/h2ogpte/wiki"
+Source = "https://github.com/h2oai/h2ogpte-mcp-server"
+Issues = "https://github.com/h2oai/h2ogpte-mcp-server/issues"
+Documentation = "https://github.com/h2oai/h2ogpte-mcp-server?tab=readme-ov-file"
 
 [tool.setuptools.dynamic]
 version = { attr = "h2ogpte_mcp_server.__version__" }
