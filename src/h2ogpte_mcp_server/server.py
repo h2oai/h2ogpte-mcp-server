@@ -4,6 +4,7 @@ import requests
 from fastmcp import FastMCP
 from fastmcp.utilities.openapi import OpenAPIParser
 from .settings import settings
+from .tools import ExtraTools
 
 
 def start_server():
@@ -24,6 +25,10 @@ def start_server():
     mcp = FastMCP.from_openapi(
         openapi_spec=openapi_spec, client=client, name="H2OGPTe MCP API server"
     )
+
+    extra_tools = ExtraTools(client)
+    extra_tools.register_tools(mcp)
+
     mcp.run()
 
 
