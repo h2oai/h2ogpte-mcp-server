@@ -12,11 +12,11 @@ build:
 
 .PHONY: install
 install:
-	pip install dist/h2ogpte_mcp_server-*.whl
+	python -m pip install dist/h2ogpte_mcp_server-*.whl
 
 .PHONY: uninstall
 uninstall:
-	pip uninstall h2ogpte_mcp_server
+	python -m pip uninstall h2ogpte_mcp_server
 
 .PHONY: upload
 upload:
