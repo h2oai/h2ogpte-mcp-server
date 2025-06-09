@@ -17,6 +17,9 @@ pip install h2ogpte-mcp-server
 # Clone git repository
 git clone https://github.com/h2oai/h2ogpte-mcp-server.git
 
+# Use the latest release version
+git checkout $(git describe --tags)
+
 make setup
 make build
 

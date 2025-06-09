@@ -9,3 +9,4 @@ venv/
 *.pyz
 *.whl
 *.o
+.DS_Store
