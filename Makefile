@@ -20,7 +20,7 @@ uninstall:
 
 .PHONY: upload
 upload:
-	./venv/bin/python -m twine upload dist/*
+	./venv/bin/python -m twine upload dist/*.whl
 
 .PHONY: clean
 clean:
