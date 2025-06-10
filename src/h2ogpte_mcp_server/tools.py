@@ -45,7 +45,7 @@ async def update_collection_thumbnail(collection_id: str, file: str, context: Co
     return "OK"
 
 
-async def register_tools(mcp: FastMCP):
+async def register_custom_tools(mcp: FastMCP):
     tools = await mcp.get_tools()
     if "upload_file" in tools:
         print("Overriding upload_file tool")
