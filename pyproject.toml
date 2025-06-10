@@ -20,6 +20,10 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dynamic = ["version", "dependencies"]
+license = "Apache-2.0"
+license-files = [
+    "LICENSE",
+]
 
 [project.scripts]
 h2ogpte-mcp-server = "h2ogpte_mcp_server:main"
