@@ -32,8 +32,10 @@ make install
 ### Environment Variables
 - **API_KEY** - (required) H2OGPTe access key. See [documentation](https://docs.h2o.ai/enterprise-h2ogpte/guide/apis#create-an-api-key) on how to get the key.
 - **H2OGPTE_SERVER_URL** - The url of H2OGPTe server. Default value is [https://h2ogpte.genai.h2o.ai](https://h2ogpte.genai.h2o.ai).
+- **ALL_ENDPOINTS_AS_TOOLS** - A boolean flag, specifing whether all REST API endpoints should be represented as MCP tools. If disabled, GET endpoints will be represented as resources. Default value is `true`.
 
 ### Example Configuration
+An example MCP server configuration for MCP clients. E.g.: Cursor, Claude Desktop
 
 ```json
 {
@@ -42,7 +44,8 @@ make install
       "command": "h2ogpte-mcp-server",
       "env": {
         "API_KEY": "sk-...",
-        "H2OGPTE_SERVER_URL": "https://h2ogpte.genai.h2o.ai"
+        "H2OGPTE_SERVER_URL": "https://h2ogpte.genai.h2o.ai",
+        "ALL_ENDPOINTS_AS_TOOLS": true
       }
     }
   }

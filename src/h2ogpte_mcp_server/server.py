@@ -22,7 +22,10 @@ async def start_server():
 
     # Create the MCP server
     mcp = FastMCP.from_openapi(
-        openapi_spec=openapi_spec, client=client, name="H2OGPTe MCP API server"
+        openapi_spec=openapi_spec, 
+        client=client,
+        name="H2OGPTe MCP API server",
+        all_routes_as_tools=settings.all_endpoints_as_tools
     )
 
     await register_custom_tools(mcp)
