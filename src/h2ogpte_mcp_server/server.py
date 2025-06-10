@@ -1,17 +1,18 @@
 import httpx
 import yaml
-import requests
 from fastmcp import FastMCP
 from fastmcp.utilities.openapi import OpenAPIParser
 from .settings import settings
-from .tools import ExtraTools
+from .tools import register_tools
 
 
-def start_server():
+async def start_server():
     mux_service_url = settings.h2ogpte_server_url
 
     # Load your OpenAPI spec
-    yaml_spec = requests.get(f"{mux_service_url}/api-spec.yaml").content
+    client = httpx.AsyncClient(base_url=f"{mux_service_url}")
+    response = await client.get("/api-spec.yaml")
+    yaml_spec = response.content
     openapi_spec = yaml.load(yaml_spec, Loader=yaml.CLoader)
     remove_create_job_endpoints(openapi_spec)
 
@@ -26,10 +27,9 @@ def start_server():
         openapi_spec=openapi_spec, client=client, name="H2OGPTe MCP API server"
     )
 
-    extra_tools = ExtraTools(client)
-    extra_tools.register_tools(mcp)
+    await register_tools(mcp)
 
-    mcp.run()
+    await mcp.run_async()
 
 
 def _patched_convert_to_parameter_location(self, param_in: "ParameterLocation") -> str:
