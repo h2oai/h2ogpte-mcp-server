@@ -2,11 +2,14 @@ import httpx
 import yaml
 from fastmcp import FastMCP
 from fastmcp.utilities.openapi import OpenAPIParser
-from .settings import settings
+from .settings import settings, basic_endpoints
 from .tools import register_custom_tools
+from .settings import EndpointSet
+from typing import List
 
 async def start_server():
-    mux_service_url = settings.h2ogpte_server_url
+    print(f"Starting H2OGPTe MCP API server with endpoint set '{settings.endpoint_set.value}'.")
+    mux_service_url = settings.server_url
 
     # Load your OpenAPI spec
     client = httpx.AsyncClient(base_url=f"{mux_service_url}")
@@ -29,7 +32,21 @@ async def start_server():
     )
 
     await register_custom_tools(mcp)
-    await remove_create_job_tools(mcp)
+
+    if settings.endpoint_set == EndpointSet.ALL_WITHOUT_ASYNC_INGEST:
+        await remove_create_job_tools(mcp)
+    elif settings.endpoint_set == EndpointSet.BASIC:
+        await reduce_tools_and_resources(mcp, basic_endpoints)
+    elif settings.endpoint_set == EndpointSet.CUSTOM:
+        if not settings.custom_endpoint_set_file:
+            raise ValueError("Custom endpoint set file is not set. Please set the CUSTOM_ENDPOINT_SET_FILE environment variable.")
+        with open(settings.custom_endpoint_set_file, "r") as f:
+            custom_endpoints = [endpoint.strip() for endpoint in f.readlines()]
+            print(f"Custom endpoints: {custom_endpoints}")
+            await reduce_tools_and_resources(mcp, custom_endpoints)
+    elif settings.endpoint_set == EndpointSet.ALL:
+        pass
+
 
     await mcp.run_async()
 
@@ -44,3 +61,17 @@ async def remove_create_job_tools(mcp: FastMCP):
         if tool.startswith("create_") and tool.endswith("_job"):
             print(f"Skipping tool {tool}")
             mcp.remove_tool(tool)
+
+
+async def reduce_tools_and_resources(mcp: FastMCP, endpoints: List[str]):
+    tools = await mcp.get_tools()
+    for tool in tools.keys():
+        if tool not in endpoints:
+            print(f"Skipping tool {tool}")
+            mcp.remove_tool(tool)
+
+    resources = await mcp.get_resources()
+    for resource in resources.keys():
+        if resource not in endpoints:
+            print(f"Skipping resource {resource}")
+            mcp.remove_resource(resource)
