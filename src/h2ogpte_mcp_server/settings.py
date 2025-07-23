@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     all_endpoints_as_tools: bool = Field(True)
     endpoint_set: EndpointSet = Field(EndpointSet.ALL_WITHOUT_ASYNC_INGEST, case_sensitive=False)
     custom_endpoint_set_file: Optional[str] = Field(None)
+    custom_openapi_spec_file: Optional[str] = Field(None)
 
 settings = Settings(_env_prefix="H2OGPTE_")
 basic_endpoints = [

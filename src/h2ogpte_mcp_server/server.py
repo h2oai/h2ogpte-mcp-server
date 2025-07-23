@@ -12,10 +12,7 @@ async def start_server():
     mux_service_url = settings.server_url
 
     # Load your OpenAPI spec
-    client = httpx.AsyncClient(base_url=f"{mux_service_url}")
-    response = await client.get("/api-spec.yaml")
-    yaml_spec = response.content
-    openapi_spec = yaml.load(yaml_spec, Loader=yaml.CLoader)
+    openapi_spec = await load_openapi_spec(mux_service_url)
 
     # Create an HTTP client for your API
     headers = {"Authorization": f"Bearer {settings.api_key}"}
@@ -50,6 +47,17 @@ async def start_server():
 
     await mcp.run_async()
 
+async def load_openapi_spec(mux_service_url):
+    if settings.custom_openapi_spec_file:
+        with open(settings.custom_openapi_spec_file, "r") as f:
+            custom_openapi_spec = yaml.load(f, Loader=yaml.CLoader)
+        return custom_openapi_spec
+    else:
+        client = httpx.AsyncClient(base_url=f"{mux_service_url}")
+        response = await client.get("/api-spec.yaml")
+        yaml_spec = response.content
+        openapi_spec = yaml.load(yaml_spec, Loader=yaml.CLoader)
+        return openapi_spec
 
 def _patched_convert_to_parameter_location(self, param_in: "ParameterLocation") -> str:
     return param_in.value

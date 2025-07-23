@@ -39,6 +39,7 @@ make install
   - `basic` - A mininal set of endpoints for chatting with collections and ingesting new documents.
   - `custom` - A set of endpoints defined by the user. If chossen, the `H2OGPTE_CUSTOM_ENDPOINT_SET_FILE` variable must be set.
 - **H2OGPTE_CUSTOM_ENDPOINT_SET_FILE** - A path to file with the list of REST API endpoints. Each endpoint name must be an a separate line. The name of the endpoint is the `operationId` attribute in REST API spec file (e.g.: [https://h2ogpte.genai.h2o.ai/api-spec.yaml](https://h2ogpte.genai.h2o.ai/api-spec.yaml)) 
+- **H2OGPTE_CUSTOM_ENDPOINT_SPEC_FILE** - A path to OpenAPI spec file in YAML format describing REST API of the H2OGPTe server. If not specified, the file is obtained from the H2OGPTe server itself. This environement variable should be used only for debugging purposes.
 
 ### Example Configuration
 An example MCP server configuration for MCP clients. E.g.: Cursor, Claude Desktop
