@@ -1,4 +1,4 @@
-__version__ = "0.1.5"
+__version__ = "0.1.6-dev"
 
 import asyncio
 from .server import start_server
