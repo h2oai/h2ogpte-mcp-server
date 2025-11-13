@@ -1,6 +1,7 @@
 import httpx
 import yaml
 from fastmcp import FastMCP
+from fastmcp.server.openapi import FastMCPOpenAPI
 from fastmcp.utilities.openapi import OpenAPIParser
 from fastmcp.server.openapi import MCPType, RouteMap
 from fastmcp.resources.resource_manager import ResourceManager
@@ -20,8 +21,6 @@ async def start_server():
     headers = {"Authorization": f"Bearer {settings.api_key}"}
     client = httpx.AsyncClient(base_url=f"{mux_service_url}/api/v1", headers=headers)
 
-    OpenAPIParser._convert_to_parameter_location = _patched_convert_to_parameter_location
-
     # Default route maps for FastMCP 2.6.1
     route_maps = [
         RouteMap(methods=["GET"], pattern=r".*\{.*\}.*", mcp_type=MCPType.RESOURCE_TEMPLATE),
@@ -33,7 +32,8 @@ async def start_server():
         route_maps = [RouteMap(methods="*", pattern=r".*", mcp_type=MCPType.TOOL)]
         
     # Create the MCP server
-    mcp = FastMCP.from_openapi(
+    # Enforcing the old parser, the experimental parser does not work as expected.
+    mcp = FastMCPOpenAPI(
         openapi_spec=openapi_spec, 
         client=client,
         name="H2OGPTe MCP API server",
@@ -56,7 +56,6 @@ async def start_server():
     elif settings.endpoint_set == EndpointSet.ALL:
         pass
 
-
     await mcp.run_async()
 
 async def load_openapi_spec(mux_service_url):
@@ -70,9 +69,6 @@ async def load_openapi_spec(mux_service_url):
         yaml_spec = response.content
         openapi_spec = yaml.load(yaml_spec, Loader=yaml.CLoader)
         return openapi_spec
-
-def _patched_convert_to_parameter_location(self, param_in: "ParameterLocation") -> str:
-    return param_in.value
 
 
 async def remove_create_job_tools(mcp: FastMCP):
