@@ -1,5 +1,6 @@
 from pathlib import Path
 from fastmcp import FastMCP, Context
+from fastmcp.tools import Tool
 
 
 async def upload_file(file: str, context: Context) -> str:
@@ -51,10 +52,12 @@ async def register_custom_tools(mcp: FastMCP):
         print("Overriding upload_file tool")
         mcp.remove_tool("upload_file")
         tool = tools["upload_file"]
-        mcp.add_tool(upload_file, name="upload_file", description=tool.description)
+        tool = Tool.from_function(name="upload_file", description=tool.description, fn=upload_file)
+        mcp.add_tool(tool)
         
     if "update_collection_thumbnail" in tools:
         print("Overriding update_collection_thumbnail tool")
         mcp.remove_tool("update_collection_thumbnail")  
         tool = tools["update_collection_thumbnail"]
-        mcp.add_tool(update_collection_thumbnail, name="update_collection_thumbnail", description=tool.description)
+        tool = Tool.from_function(name="update_collection_thumbnail", description=tool.description, fn=update_collection_thumbnail)
+        mcp.add_tool(tool)

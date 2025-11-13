@@ -1,7 +1,10 @@
 import httpx
 import yaml
 from fastmcp import FastMCP
+from fastmcp.server.openapi import FastMCPOpenAPI
 from fastmcp.utilities.openapi import OpenAPIParser
+from fastmcp.server.openapi import MCPType, RouteMap
+from fastmcp.resources.resource_manager import ResourceManager
 from .settings import settings, basic_endpoints
 from .tools import register_custom_tools
 from .settings import EndpointSet
@@ -18,14 +21,23 @@ async def start_server():
     headers = {"Authorization": f"Bearer {settings.api_key}"}
     client = httpx.AsyncClient(base_url=f"{mux_service_url}/api/v1", headers=headers)
 
-    OpenAPIParser._convert_to_parameter_location = _patched_convert_to_parameter_location
+    # Default route maps for FastMCP 2.6.1
+    route_maps = [
+        RouteMap(methods=["GET"], pattern=r".*\{.*\}.*", mcp_type=MCPType.RESOURCE_TEMPLATE),
+        RouteMap(methods=["GET"], pattern=r".*", mcp_type=MCPType.RESOURCE),
+        RouteMap(methods="*", pattern=r".*", mcp_type=MCPType.TOOL),
+    ]
 
+    if settings.all_endpoints_as_tools:
+        route_maps = [RouteMap(methods="*", pattern=r".*", mcp_type=MCPType.TOOL)]
+        
     # Create the MCP server
-    mcp = FastMCP.from_openapi(
+    # Enforcing the old parser, the experimental parser does not work as expected.
+    mcp = FastMCPOpenAPI(
         openapi_spec=openapi_spec, 
         client=client,
         name="H2OGPTe MCP API server",
-        all_routes_as_tools=settings.all_endpoints_as_tools
+        route_maps=route_maps,
     )
 
     await register_custom_tools(mcp)
@@ -44,7 +56,6 @@ async def start_server():
     elif settings.endpoint_set == EndpointSet.ALL:
         pass
 
-
     await mcp.run_async()
 
 async def load_openapi_spec(mux_service_url):
@@ -58,9 +69,6 @@ async def load_openapi_spec(mux_service_url):
         yaml_spec = response.content
         openapi_spec = yaml.load(yaml_spec, Loader=yaml.CLoader)
         return openapi_spec
-
-def _patched_convert_to_parameter_location(self, param_in: "ParameterLocation") -> str:
-    return param_in.value
 
 
 async def remove_create_job_tools(mcp: FastMCP):
@@ -79,7 +87,17 @@ async def reduce_tools_and_resources(mcp: FastMCP, endpoints: List[str]):
             mcp.remove_tool(tool)
 
     resources = await mcp.get_resources()
-    for resource in resources.keys():
-        if resource not in endpoints:
-            print(f"Skipping resource {resource}")
-            mcp.remove_resource(resource)
+    resource_templates = await mcp.get_resource_templates()
+    mcp._resource_manager = ResourceManager()
+
+    for resource_name, resource in resources.items():
+        if resource_name in endpoints:
+            mcp.add_resource(resource)
+        else:
+            print(f"Skipping resource {resource_name}")
+
+    for resource_template_name, resource_template in resource_templates.items():
+        if resource_template_name in endpoints:
+            mcp.add_resource_template(resource_template)
+        else:
+            print(f"Skipping resource template {resource_template_name}")
