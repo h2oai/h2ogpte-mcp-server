@@ -8,6 +8,7 @@ from fastmcp.resources.resource_manager import ResourceManager
 from .settings import settings, basic_endpoints
 from .tools import register_custom_tools
 from .settings import EndpointSet
+from .spec_utils import relax_nullable_enums
 from typing import List
 
 async def start_server():
@@ -19,7 +20,9 @@ async def start_server():
 
     # Create an HTTP client for your API
     headers = {"Authorization": f"Bearer {settings.api_key}"}
-    client = httpx.AsyncClient(base_url=f"{mux_service_url}/api/v1", headers=headers)
+    client = httpx.AsyncClient(
+        base_url=f"{mux_service_url}/api/v1", headers=headers, follow_redirects=True
+    )
 
     # Default route maps for FastMCP 2.6.1
     route_maps = [
@@ -61,14 +64,16 @@ async def start_server():
 async def load_openapi_spec(mux_service_url):
     if settings.custom_openapi_spec_file:
         with open(settings.custom_openapi_spec_file, "r") as f:
-            custom_openapi_spec = yaml.load(f, Loader=yaml.CLoader)
-        return custom_openapi_spec
+            openapi_spec = yaml.load(f, Loader=yaml.CLoader)
     else:
-        client = httpx.AsyncClient(base_url=f"{mux_service_url}")
+        client = httpx.AsyncClient(base_url=f"{mux_service_url}", follow_redirects=True)
         response = await client.get("/api-spec.yaml")
         yaml_spec = response.content
         openapi_spec = yaml.load(yaml_spec, Loader=yaml.CLoader)
-        return openapi_spec
+    # Normalize OpenAPI 3.0 nullable-enum fields (e.g. Collection.vex_encryption)
+    # so strict output-schema validation accepts the null the API can return.
+    relax_nullable_enums(openapi_spec)
+    return openapi_spec
 
 
 async def remove_create_job_tools(mcp: FastMCP):

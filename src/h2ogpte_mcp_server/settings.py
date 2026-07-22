@@ -1,4 +1,4 @@
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings
 from typing import Optional
 from enum import Enum
@@ -16,6 +16,14 @@ class Settings(BaseSettings):
     endpoint_set: EndpointSet = Field(EndpointSet.ALL_WITHOUT_ASYNC_INGEST, case_sensitive=False)
     custom_endpoint_set_file: Optional[str] = Field(None)
     custom_openapi_spec_file: Optional[str] = Field(None)
+
+    @field_validator("server_url")
+    @classmethod
+    def _strip_trailing_slash(cls, v: str) -> str:
+        # A trailing slash yields "<url>//api/v1", which the ingress answers with
+        # a 301 redirect the client does not follow — strip it so any mistakenly
+        # configured trailing slash still works.
+        return v.rstrip("/")
 
 settings = Settings(_env_prefix="H2OGPTE_")
 basic_endpoints = [

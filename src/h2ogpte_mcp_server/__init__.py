@@ -1,10 +1,11 @@
 __version__ = "0.1.6-dev"
 
 import asyncio
-from .server import start_server
 
 
 def main():
+    from .server import start_server
+
     asyncio.run(start_server())
 
 
