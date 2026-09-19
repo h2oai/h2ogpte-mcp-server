@@ -9,19 +9,31 @@ from .settings import settings, basic_endpoints
 from .tools import register_custom_tools
 from .settings import EndpointSet
 from .spec_utils import relax_nullable_enums
+from .ssl_utils import build_ssl_context
 from typing import List
 
 async def start_server():
     print(f"Starting H2OGPTe MCP API server with endpoint set '{settings.endpoint_set.value}'.")
     mux_service_url = settings.server_url
 
+    # Built once and shared by both clients: it adds any configured CA bundle
+    # to certifi's roots so a deployment behind a private CA verifies, instead
+    # of failing with CERTIFICATE_VERIFY_FAILED before a single tool is
+    # registered. Passing an explicit context also stops httpx applying its
+    # own SSL_CERT_FILE handling, which replaces the trust store rather than
+    # extending it and aborts outright on a stale path.
+    ssl_context = build_ssl_context(settings.ca_bundle)
+
     # Load your OpenAPI spec
-    openapi_spec = await load_openapi_spec(mux_service_url)
+    openapi_spec = await load_openapi_spec(mux_service_url, ssl_context)
 
     # Create an HTTP client for your API
     headers = {"Authorization": f"Bearer {settings.api_key}"}
     client = httpx.AsyncClient(
-        base_url=f"{mux_service_url}/api/v1", headers=headers, follow_redirects=True
+        base_url=f"{mux_service_url}/api/v1",
+        headers=headers,
+        follow_redirects=True,
+        verify=ssl_context,
     )
 
     # Default route maps for FastMCP 2.6.1
@@ -61,12 +73,16 @@ async def start_server():
 
     await mcp.run_async()
 
-async def load_openapi_spec(mux_service_url):
+async def load_openapi_spec(mux_service_url, ssl_context=None):
     if settings.custom_openapi_spec_file:
         with open(settings.custom_openapi_spec_file, "r") as f:
             openapi_spec = yaml.load(f, Loader=yaml.CLoader)
     else:
-        client = httpx.AsyncClient(base_url=f"{mux_service_url}", follow_redirects=True)
+        client = httpx.AsyncClient(
+            base_url=f"{mux_service_url}",
+            follow_redirects=True,
+            verify=ssl_context if ssl_context is not None else True,
+        )
         response = await client.get("/api-spec.yaml")
         yaml_spec = response.content
         openapi_spec = yaml.load(yaml_spec, Loader=yaml.CLoader)
