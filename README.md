@@ -40,6 +40,27 @@ make install
   - `custom` - A set of endpoints defined by the user. If chossen, the `H2OGPTE_CUSTOM_ENDPOINT_SET_FILE` variable must be set.
 - **H2OGPTE_CUSTOM_ENDPOINT_SET_FILE** - A path to file with the list of REST API endpoints. Each endpoint name must be an a separate line. The name of the endpoint is the `operationId` attribute in REST API spec file (e.g.: [https://h2ogpte.genai.h2o.ai/api-spec.yaml](https://h2ogpte.genai.h2o.ai/api-spec.yaml)) 
 - **H2OGPTE_CUSTOM_OPENAPI_SPEC_FILE** - A path to OpenAPI spec file in YAML format describing REST API of the H2OGPTe server. If not specified, the file is obtained from the H2OGPTe server itself. This environement variable should be used only for debugging purposes.
+- **H2OGPTE_CA_BUNDLE** - A path to an extra PEM CA bundle (or a hashed CA directory) to trust when connecting to the H2OGPTe server. Needed when the server is behind a private certificate authority. `SSL_CERT_FILE`, `SSL_CERT_DIR` and `REQUESTS_CA_BUNDLE` are honored as well.
+
+### Connecting to a server behind a private CA
+
+An H2OGPTe deployment on an internal certificate authority serves a certificate that the public roots do not chain to, so the server fails at startup:
+
+```
+httpx.ConnectError: [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate
+```
+
+Point `H2OGPTE_CA_BUNDLE` (or `SSL_CERT_FILE`) at the CA bundle:
+
+```json
+"env": {
+  "H2OGPTE_API_KEY": "sk-...",
+  "H2OGPTE_SERVER_URL": "https://h2ogpte.internal.example.com",
+  "H2OGPTE_CA_BUNDLE": "/etc/ssl/certs/root-ca-bundle.crt"
+}
+```
+
+Configured bundles are **added** to the default (certifi) roots rather than replacing them, so a bundle holding only the internal CA still leaves public certificates verifiable. A path that does not exist, or is not a readable PEM bundle, is reported on stderr and skipped rather than stopping the server from starting.
 
 ### Example Configuration
 An example MCP server configuration for MCP clients. E.g.: Cursor, Claude Desktop
