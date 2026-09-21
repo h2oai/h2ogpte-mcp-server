@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     endpoint_set: EndpointSet = Field(EndpointSet.ALL_WITHOUT_ASYNC_INGEST, case_sensitive=False)
     custom_endpoint_set_file: Optional[str] = Field(None)
     custom_openapi_spec_file: Optional[str] = Field(None)
+    # Path to an extra PEM CA bundle (file) or hashed CA directory to trust on
+    # top of certifi, for a server_url behind a private CA. SSL_CERT_FILE,
+    # SSL_CERT_DIR and REQUESTS_CA_BUNDLE are honored too; see ssl_utils.
+    ca_bundle: Optional[str] = Field(None)
 
     @field_validator("server_url")
     @classmethod
