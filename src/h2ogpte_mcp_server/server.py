@@ -72,7 +72,7 @@ async def start_server():
 
     await mcp.run_async()
 
-async def load_openapi_spec(mux_service_url, ssl_context=None):
+async def load_openapi_spec(mux_service_url, ssl_context):
     if settings.custom_openapi_spec_file:
         with open(settings.custom_openapi_spec_file, "r") as f:
             openapi_spec = yaml.load(f, Loader=yaml.CLoader)
@@ -80,7 +80,7 @@ async def load_openapi_spec(mux_service_url, ssl_context=None):
         client = httpx.AsyncClient(
             base_url=f"{mux_service_url}",
             follow_redirects=True,
-            verify=ssl_context if ssl_context is not None else True,
+            verify=ssl_context,
         )
         response = await client.get("/api-spec.yaml")
         yaml_spec = response.content
