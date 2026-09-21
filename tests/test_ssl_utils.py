@@ -263,21 +263,20 @@ def test_setting_and_env_naming_the_same_file_loads_it_once(tmp_path, capsys):
     assert "Trusting additional CA bundle" not in capsys.readouterr().err
 
 
-def test_missing_explicit_bundle_is_skipped_not_fatal(tmp_path, capsys):
-    context = build_ssl_context(str(tmp_path / "nope.pem"), env={})
+def test_missing_explicit_bundle_is_fatal(tmp_path):
+    # Falling back to certifi here would start the server in exactly the state
+    # H2OGPTE_CA_BUNDLE was set to fix, and every request would then fail with
+    # an opaque CERTIFICATE_VERIFY_FAILED.
+    with pytest.raises(ValueError, match="H2OGPTE_CA_BUNDLE not found"):
+        build_ssl_context(str(tmp_path / "nope.pem"), env={})
 
-    assert _ca_count(context) == _certifi_count()
-    assert "not found" in capsys.readouterr().err
 
-
-def test_unreadable_explicit_bundle_is_skipped_not_fatal(tmp_path, capsys):
+def test_unreadable_explicit_bundle_is_fatal(tmp_path):
     junk = tmp_path / "junk.pem"
     junk.write_text("this is not a certificate\n")
 
-    context = build_ssl_context(str(junk), env={})
-
-    assert _ca_count(context) == _certifi_count()
-    assert "could not load" in capsys.readouterr().err
+    with pytest.raises(ValueError, match="H2OGPTE_CA_BUNDLE could not be loaded"):
+        build_ssl_context(str(junk), env={})
 
 
 @pytest.mark.parametrize(

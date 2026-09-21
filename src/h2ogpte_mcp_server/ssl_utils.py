@@ -79,28 +79,39 @@ def build_ssl_context(
     H2OGPTE_CA_BUNDLE and REQUESTS_CA_BUNDLE on top of it, so a bundle holding
     only the internal CA still leaves public certificates verifiable.
 
-    A path that does not exist, or is not a readable PEM bundle, is reported
-    and skipped instead of aborting the process. Under httpx's own handling that
-    path is passed straight to ``ssl.create_default_context(cafile=...)`` and a
-    stale value takes the whole server down.
+    H2OGPTE_CA_BUNDLE is an explicit choice, so a path that does not exist, or
+    is not a readable PEM bundle, raises: falling back to certifi would start
+    the server in precisely the state the setting was added to fix, and every
+    later request would fail with an opaque CERTIFICATE_VERIFY_FAILED. An
+    inherited environment variable is reported and skipped instead, because a
+    stale value in a shared image should not take a working server down.
     """
     env = os.environ if env is None else env
     context, seed_path = _seed_context(env)
 
-    additions: List[Tuple[str, str]] = [("H2OGPTE_CA_BUNDLE", _clean(ca_bundle))]
-    additions += [
-        (name, _clean(env.get(name))) for name in ADDITIONAL_CA_BUNDLE_ENV_VARS
+    # (source, path, required). Only the explicit setting is required: the rest
+    # are inherited from the environment or passed by callers as a convenience.
+    additions: List[Tuple[str, str, bool]] = [
+        ("H2OGPTE_CA_BUNDLE", _clean(ca_bundle), True)
     ]
-    additions += [("extra_paths", _clean(p)) for p in (extra_paths or [])]
+    additions += [
+        (name, _clean(env.get(name)), False) for name in ADDITIONAL_CA_BUNDLE_ENV_VARS
+    ]
+    additions += [("extra_paths", _clean(p), False) for p in (extra_paths or [])]
 
     seen = {seed_path} if seed_path else set()
-    for source, path in additions:
+    for source, path, required in additions:
         if not path or path in seen:
             continue
         seen.add(path)
 
         is_dir = os.path.isdir(path)
         if not is_dir and not os.path.isfile(path):
+            if required:
+                raise ValueError(
+                    f"CA bundle from {source} not found: {path}. Correct the "
+                    f"path or unset {source}."
+                )
             _warn(f"CA bundle from {source} not found, ignoring: {path}")
             continue
         try:
@@ -109,6 +120,11 @@ def build_ssl_context(
             else:
                 context.load_verify_locations(cafile=path)
         except (ssl.SSLError, OSError) as e:
+            if required:
+                raise ValueError(
+                    f"CA bundle from {source} could not be loaded ({path}): "
+                    f"{e}. It must be a PEM bundle or a hashed CA directory."
+                ) from e
             _warn(f"could not load CA bundle from {source} ({path}): {e}")
             continue
         print(f"Trusting additional CA bundle from {source}: {path}", file=sys.stderr)

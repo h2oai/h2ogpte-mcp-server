@@ -60,7 +60,7 @@ Point `H2OGPTE_CA_BUNDLE` (or `SSL_CERT_FILE`) at the CA bundle:
 }
 ```
 
-`H2OGPTE_CA_BUNDLE` is **added** to the default (certifi) roots rather than replacing them, so a bundle holding only the internal CA still leaves public certificates verifiable. `REQUESTS_CA_BUNDLE` is added the same way, since httpx itself never reads it. A path that does not exist, or is not a readable PEM bundle, is reported on stderr and skipped rather than stopping the server from starting.
+`H2OGPTE_CA_BUNDLE` is **added** to the default (certifi) roots rather than replacing them, so a bundle holding only the internal CA still leaves public certificates verifiable. `REQUESTS_CA_BUNDLE` is added the same way, since httpx itself never reads it. If either path does not exist, or is not a readable PEM bundle, the server says so on stderr; for `H2OGPTE_CA_BUNDLE` it then refuses to start, because starting with the setting ignored only moves the failure to every later request, where it shows up as an opaque `CERTIFICATE_VERIFY_FAILED`.
 
 `SSL_CERT_FILE` and `SSL_CERT_DIR` keep the meaning httpx gives them: they **replace** the trust store, so only the CAs they name are trusted and the public roots are dropped. That is what an operator who pins these variables to an internal CA is asking for, and `H2OGPTE_CA_BUNDLE` is then added on top of that store. `SSL_CERT_FILE` wins when both are set. Because these two are commonly inherited from a shared image rather than set for this server, a stale value in either one is reported on stderr and skipped, leaving the default roots in place, instead of stopping the server from starting.
 
