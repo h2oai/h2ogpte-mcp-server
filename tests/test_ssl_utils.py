@@ -108,6 +108,7 @@ def _hashed_ca_dir(tmp_path, ca_cert, name="cadir"):
 def _tls_server(cert, key):
     """Serve TLS on a high port and yield that port."""
     server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    server_context.minimum_version = ssl.TLSVersion.TLSv1_2
     server_context.load_cert_chain(certfile=str(cert), keyfile=str(key))
 
     listener = socket.socket()

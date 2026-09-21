@@ -28,6 +28,14 @@ def _clean(value: Optional[str]) -> str:
     return (value or "").strip()
 
 
+def _new_context(**kwargs) -> ssl.SSLContext:
+    # TLS 1.2 is already the floor on supported runtimes; pin it so a future
+    # default cannot quietly lower it (#12739).
+    context = ssl.create_default_context(**kwargs)
+    context.minimum_version = ssl.TLSVersion.TLSv1_2
+    return context
+
+
 def _seed_context(env: Mapping[str, str]) -> Tuple[ssl.SSLContext, Optional[str]]:
     """Create the base context, preserving httpx's SSL_CERT_* replace semantics.
 
@@ -48,9 +56,9 @@ def _seed_context(env: Mapping[str, str]) -> Tuple[ssl.SSLContext, Optional[str]
             continue
         try:
             if is_dir:
-                context = ssl.create_default_context(capath=path)
+                context = _new_context(capath=path)
             else:
-                context = ssl.create_default_context(cafile=path)
+                context = _new_context(cafile=path)
         except (ssl.SSLError, OSError) as e:
             _warn(f"could not load CA bundle from {name} ({path}): {e}")
             continue
@@ -60,7 +68,7 @@ def _seed_context(env: Mapping[str, str]) -> Tuple[ssl.SSLContext, Optional[str]
             file=sys.stderr,
         )
         return context, path
-    return ssl.create_default_context(cafile=certifi.where()), None
+    return _new_context(cafile=certifi.where()), None
 
 
 def build_ssl_context(
