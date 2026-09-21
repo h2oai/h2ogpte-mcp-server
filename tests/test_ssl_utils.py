@@ -164,7 +164,9 @@ def _common_names(context):
 
 
 def _certifi_count():
-    return _ca_count(ssl.create_default_context(cafile=certifi.where()))
+    context = ssl.create_default_context(cafile=certifi.where())
+    context.minimum_version = ssl.TLSVersion.TLSv1_2
+    return _ca_count(context)
 
 
 def test_no_bundle_configured_is_plain_certifi():
@@ -225,7 +227,9 @@ def test_ssl_cert_dir_replaces_the_trust_store(tmp_path):
     with _tls_server(server_cert, server_key) as port:
         assert _handshake(context, port)["subject"]
         with pytest.raises(ssl.SSLCertVerificationError):
-            _handshake(ssl.create_default_context(cafile=certifi.where()), port)
+            certifi_context = ssl.create_default_context(cafile=certifi.where())
+            certifi_context.minimum_version = ssl.TLSVersion.TLSv1_2
+            _handshake(certifi_context, port)
 
 
 def test_ssl_cert_file_wins_over_ssl_cert_dir(tmp_path):
