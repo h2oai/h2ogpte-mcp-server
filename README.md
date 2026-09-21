@@ -40,7 +40,7 @@ make install
   - `custom` - A set of endpoints defined by the user. If chossen, the `H2OGPTE_CUSTOM_ENDPOINT_SET_FILE` variable must be set.
 - **H2OGPTE_CUSTOM_ENDPOINT_SET_FILE** - A path to file with the list of REST API endpoints. Each endpoint name must be an a separate line. The name of the endpoint is the `operationId` attribute in REST API spec file (e.g.: [https://h2ogpte.genai.h2o.ai/api-spec.yaml](https://h2ogpte.genai.h2o.ai/api-spec.yaml)) 
 - **H2OGPTE_CUSTOM_OPENAPI_SPEC_FILE** - A path to OpenAPI spec file in YAML format describing REST API of the H2OGPTe server. If not specified, the file is obtained from the H2OGPTe server itself. This environement variable should be used only for debugging purposes.
-- **H2OGPTE_CA_BUNDLE** - A path to an extra PEM CA bundle (or a hashed CA directory) to trust when connecting to the H2OGPTe server. Needed when the server is behind a private certificate authority. `SSL_CERT_FILE`, `SSL_CERT_DIR` and `REQUESTS_CA_BUNDLE` are honored as well.
+- **H2OGPTE_CA_BUNDLE** - A path to an extra PEM CA bundle (or a hashed CA directory) to trust on top of the default roots when connecting to the H2OGPTe server. Needed when the server is behind a private certificate authority. `SSL_CERT_FILE`, `SSL_CERT_DIR` and `REQUESTS_CA_BUNDLE` are honored as well, with the trust semantics described in [Connecting to a server behind a private CA](#connecting-to-a-server-behind-a-private-ca).
 
 ### Connecting to a server behind a private CA
 
@@ -60,7 +60,9 @@ Point `H2OGPTE_CA_BUNDLE` (or `SSL_CERT_FILE`) at the CA bundle:
 }
 ```
 
-Configured bundles are **added** to the default (certifi) roots rather than replacing them, so a bundle holding only the internal CA still leaves public certificates verifiable. A path that does not exist, or is not a readable PEM bundle, is reported on stderr and skipped rather than stopping the server from starting.
+`H2OGPTE_CA_BUNDLE` is **added** to the default (certifi) roots rather than replacing them, so a bundle holding only the internal CA still leaves public certificates verifiable. `REQUESTS_CA_BUNDLE` is added the same way, since httpx itself never reads it. A path that does not exist, or is not a readable PEM bundle, is reported on stderr and skipped rather than stopping the server from starting.
+
+`SSL_CERT_FILE` and `SSL_CERT_DIR` keep the meaning httpx gives them: they **replace** the trust store, so only the CAs they name are trusted and the public roots are dropped. That is what an operator who pins these variables to an internal CA is asking for, and `H2OGPTE_CA_BUNDLE` is then added on top of that store. `SSL_CERT_FILE` wins when both are set. Because these two are commonly inherited from a shared image rather than set for this server, a stale value in either one is reported on stderr and skipped, leaving the default roots in place, instead of stopping the server from starting.
 
 ### Example Configuration
 An example MCP server configuration for MCP clients. E.g.: Cursor, Claude Desktop

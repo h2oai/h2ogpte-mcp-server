@@ -16,12 +16,11 @@ async def start_server():
     print(f"Starting H2OGPTe MCP API server with endpoint set '{settings.endpoint_set.value}'.")
     mux_service_url = settings.server_url
 
-    # Built once and shared by both clients: it adds any configured CA bundle
-    # to certifi's roots so a deployment behind a private CA verifies, instead
-    # of failing with CERTIFICATE_VERIFY_FAILED before a single tool is
-    # registered. Passing an explicit context also stops httpx applying its
-    # own SSL_CERT_FILE handling, which replaces the trust store rather than
-    # extending it and aborts outright on a stale path.
+    # Built once and shared by both clients: it adds H2OGPTE_CA_BUNDLE to the
+    # trust store so a deployment behind a private CA verifies, instead of
+    # failing with CERTIFICATE_VERIFY_FAILED before a single tool is
+    # registered. SSL_CERT_FILE and SSL_CERT_DIR keep the meaning httpx gives
+    # them, replacing the store rather than extending it; see ssl_utils.
     ssl_context = build_ssl_context(settings.ca_bundle)
 
     # Load your OpenAPI spec
